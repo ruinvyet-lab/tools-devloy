@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vercel Custom Deployer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Vercel Quick Deploy</h1>
+        
+        <div class="upload-section">
+            <label>API Configuration</label>
+            <input type="password" id="apiToken" placeholder="Vercel API Token">
+            
+            <label>Project Details</label>
+            <input type="text" id="projectName" placeholder="Nama Subdomain (misal: proyek-saya)">
+            
+            <label>Select File (ZIP)</label>
+            <input type="file" id="fileInput" accept=".zip">
+            
+            <button onclick="deployToVercel()" id="deployBtn">🚀 Deploy ke [nama].vercel.app</button>
+        </div>
+
+        <div id="status" class="status-box"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
