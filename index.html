@@ -43,32 +43,23 @@
 <script>
     async function mulaiDeploy() {
         const token = document.getElementById('token').value;
-        const projectName = document.getElementById('projectName').value;
+        const projectName = document.getElementById('projectName').value.trim().toLowerCase().replace(/\s+/g, '-');
         const fileInput = document.getElementById('fileInput');
         const statusDiv = document.getElementById('status');
         const btn = document.getElementById('deployBtn');
 
-        // Validasi
         if (!token || !projectName || !fileInput.files[0]) {
             tampilkanStatus("Semua kolom dan file harus diisi!", "error");
             return;
         }
 
         const file = fileInput.files[0];
-        
-        // Cek apakah file adalah HTML
-        if (file.name !== "index.html") {
-            if (!confirm("File yang dipilih bukan 'index.html'. Vercel mungkin tidak menampilkannya sebagai halaman utama. Lanjutkan?")) return;
-        }
-
         btn.disabled = true;
-        tampilkanStatus("Membaca file dan menghubungi Vercel...", "loading");
+        tampilkanStatus("Sedang mengirim ke Vercel...", "loading");
 
         try {
-            // 1. Membaca isi file yang diupload
             const fileContent = await file.text();
 
-            // 2. Kirim ke API Vercel
             const response = await fetch('https://api.vercel.com/v13/deployments', {
                 method: 'POST',
                 headers: {
@@ -76,26 +67,24 @@
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    name: projectName,
-                    files: [
-                        {
-                            file: file.name,
-                            data: fileContent
-                        }
-                    ],
-                    projectSettings: {
-                        framework: null
-                    }
+                    name: projectName, // Ini yang menentukan domain utama
+                    files: [{ file: "index.html", data: fileContent }],
+                    projectSettings: { framework: null },
+                    target: 'production' // Menandakan ini adalah rilis utama
                 })
             });
 
             const result = await response.json();
 
             if (response.ok) {
+                // Kita buat custom link berdasarkan Nama Project agar rapi
+                const customDomain = `${projectName}.vercel.app`;
+                
                 tampilkanStatus(`
                     <b>🎉 Berhasil Dideploy!</b><br>
                     Project: ${projectName}<br>
-                    URL: <a href="https://${result.url}" target="_blank">https://${result.url}</a>
+                    Domain Utama: <a href="https://${customDomain}" target="_blank">https://${customDomain}</a><br>
+                    <small style="color:gray">Note: Mungkin butuh beberapa detik sampai domain aktif.</small>
                 `, "success");
             } else {
                 tampilkanStatus(`❌ Gagal: ${result.error.message}`, "error");
