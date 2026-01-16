@@ -6,24 +6,26 @@ async function deployToVercel() {
     const btn = document.getElementById('deployBtn');
 
     if (!apiToken || !projectName || !fileInput.files[0]) {
-        alert("Mohon lengkapi semua field!");
+        alert("Isi API Token, Nama Project, dan Pilih File ZIP!");
         return;
     }
 
-    const slugifiedName = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    status.innerHTML = `<span style="color: blue;">Sedang memproses "${slugifiedName}"...</span>`;
+    // Nama domain kustom (slug)
+    const slugName = projectName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    
+    status.innerHTML = `<span style="color: #0070f3;">⏳ Memulai proses deploy: ${slugName}.vercel.app...</span>`;
     btn.disabled = true;
 
     const file = fileInput.files[0];
 
     try {
-        // PERBAIKAN: Gunakan endpoint khusus untuk file biner tunggal
-        // Dan pastikan header Content-Type adalah application/octet-stream
-        const response = await fetch(`https://api.vercel.com/v13/deployments?name=${slugifiedName}`, {
+        // Step 1: Deploy ke Vercel API
+        // Kita menggunakan method POST dengan body mentah (binary)
+        const response = await fetch(`https://api.vercel.com/v13/deployments`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiToken}`,
-                'Content-Type': 'application/octet-stream', // Penting agar tidak error Unsupported Media Type
+                'Content-Type': 'application/zip', // Memberitahu Vercel ini adalah ZIP
             },
             body: file 
         });
@@ -31,17 +33,24 @@ async function deployToVercel() {
         const data = await response.json();
 
         if (response.ok) {
+            // Step 2: Mengatur Project Name agar sesuai keinginan
+            // Secara default Vercel membuat nama random jika cuma upload file.
+            // Kita arahkan ke URL hasil deploy
             status.innerHTML = `
-                <div style="color: green; font-weight: bold;">✅ Berhasil Dideploy!</div>
-                <p>URL: <a href="https://${data.url}" target="_blank">https://${data.url}</a></p>
-                <p><small>Project Name: ${slugifiedName}</small></p>
+                <div style="color: green; font-weight: bold; margin-bottom: 10px;">✅ BERHASIL DEPLOY!</div>
+                <div style="background: #eee; padding: 10px; border-radius: 5px;">
+                    <strong>Link Web:</strong> <br>
+                    <a href="https://${data.url}" target="_blank">https://${data.url}</a>
+                </div>
+                <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                    Catatan: Vercel mungkin akan menambahkan angka unik di belakang nama jika nama "${slugName}" sudah dipakai orang lain.
+                </p>
             `;
         } else {
-            // Jika error karena nama sudah dipakai atau hal lain
-            status.innerHTML = `<span style="color: red;">❌ Error: ${data.error.message}</span>`;
+            status.innerHTML = `<span style="color: red;">❌ Gagal: ${data.error.message}</span>`;
         }
     } catch (err) {
-        status.innerText = "Terjadi kesalahan pada koneksi API.";
+        status.innerHTML = `<span style="color: red;">❌ Terjadi kesalahan jaringan.</span>`;
         console.error(err);
     } finally {
         btn.disabled = false;
