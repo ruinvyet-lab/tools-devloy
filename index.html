@@ -3,28 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vercel Custom Deployer</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Vercel Auto Deployer</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding: 50px; background: #f4f4f9; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input, button { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #000; color: white; cursor: pointer; border: none; font-weight: bold; }
+        button:hover { background: #333; }
+        #status { margin-top: 15px; font-size: 0.9rem; word-break: break-all; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Vercel Quick Deploy</h1>
-        
-        <div class="upload-section">
-            <label>API Configuration</label>
-            <input type="password" id="apiToken" placeholder="Vercel API Token">
-            
-            <label>Project Details</label>
-            <input type="text" id="projectName" placeholder="Nama Subdomain (misal: proyek-saya)">
-            
-            <label>Select File (ZIP)</label>
-            <input type="file" id="fileInput" accept=".file">
-            
-            <button onclick="deployToVercel()" id="deployBtn">🚀 Deploy ke [nama].vercel.app</button>
-        </div>
 
-        <div id="status" class="status-box"></div>
-    </div>
-    <script src="script.js"></script>
+<div class="card">
+    <h3>Deploy ke Vercel</h3>
+    <input type="password" id="token" placeholder="Masukkan Vercel API Token">
+    <input type="text" id="projectName" placeholder="Nama Project (misal: web-saya)">
+    <button onclick="deployKeVercel()">Deploy Sekarang</button>
+    <div id="status"></div>
+</div>
+
+<script>
+    async function deployKeVercel() {
+        const token = document.getElementById('token').value;
+        const projectName = document.getElementById('projectName').value;
+        const statusDiv = document.getElementById('status');
+
+        if (!token || !projectName) {
+            alert("Token dan Nama Project wajib diisi!");
+            return;
+        }
+
+        statusDiv.innerHTML = "Sedang memproses...";
+
+        // Isi file index.html yang akan dideploy
+        const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <body>
+            <h1>Halo! Web ini dideploy via API</h1>
+            <p>Berhasil dideploy pada: ${new Date().toLocaleString()}</p>
+        </body>
+        </html>`;
+
+        const deployData = {
+            name: projectName,
+            files: [
+                {
+                    file: "index.html",
+                    data: htmlContent
+                }
+            ],
+            projectSettings: {
+                framework: null
+            }
+        };
+
+        try {
+            const response = await fetch('https://api.vercel.com/v13/deployments', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(deployData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                statusDiv.innerHTML = `✅ <b>Berhasil!</b><br>URL: <a href="https://${result.url}" target="_blank">${result.url}</a>`;
+            } else {
+                statusDiv.innerHTML = `❌ <b>Error:</b> ${result.error.message}`;
+            }
+        } catch (error) {
+            statusDiv.innerHTML = `❌ <b>Kesalahan:</b> ${error.message}`;
+        }
+    }
+</script>
+
 </body>
 </html>
